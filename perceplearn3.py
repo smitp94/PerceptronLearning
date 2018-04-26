@@ -2,6 +2,7 @@ import json
 import sys
 import re
 import numpy as np
+import random
 
 file_write_vanilla = 'data/vanillamodel.txt'
 file_write_average = 'data/averagedmodel.txt'
@@ -59,8 +60,8 @@ def is_stopword(word):
 def nbmodel_write(Weight_posnegV, Weight_TFV, Bias, Weight_posnegA, Weight_TFA, Bias_avg, unique_words):
     fv = open(file_write_vanilla, 'w', encoding='utf8')
     fa = open(file_write_average, 'w', encoding='utf8')
-    cv = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegV), json.dumps(Weight_TFV), json.dumps(unique_words), json.dumps(Bias)))
-    ca = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegA), json.dumps(Weight_TFA), json.dumps(unique_words), json.dumps(Bias_avg)))
+    cv = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegV), json.dumps(Weight_TFV), json.dumps(Bias), json.dumps(unique_words)))
+    ca = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegA), json.dumps(Weight_TFA), json.dumps(Bias_avg), json.dumps(unique_words)))
     fv.write(json.dumps(cv))
     fa.write(json.dumps(ca))
 
@@ -96,15 +97,15 @@ def percept():
 
     for itr in range(30):
         counter = 0
+        random.shuffle(records)
         for doc in records:
             if doc.pos_neg == "Pos":
                 y = 1
             else:
                 y = -1
             for w in doc.text:
-                if w not in stopwords:
-                    index = unique_words.index(w)
-                    x_vector[index] += 1
+                index = unique_words.index(w)
+                x_vector[index] += 1
             # print(x_vector)
 
             activation = np.sum(np.multiply(Weight_posnegV, x_vector)) + Bias[0]
@@ -127,7 +128,7 @@ def percept():
             activation = np.sum(np.multiply(Weight_TFV, x_vector)) + Bias[1]
 
             if y*activation <= 0:
-                Weight_TFV = Weight_TFV + (y*x_vector)
+                Weight_TFV = Weight_TFV + (y * x_vector)
                 cache_TFA = cache_TFA + (y * counter * x_vector)
                 Bias[1] += y
                 cache_b[1] += (y * counter)
@@ -137,9 +138,9 @@ def percept():
 
     Weight_posnegA -= (cache_posnegA/counter)
     Weight_TFA -= (cache_TFA/counter)
-    Bias_avg -= (Bias/counter)
+    Bias_avg = Bias - (Bias/counter)
 
-    nbmodel_write(Weight_posnegV, Weight_TFV, Bias, Weight_posnegA, Weight_TFA, Bias_avg, unique_words)
+    nbmodel_write(Weight_posnegV.tolist(), Weight_TFV.tolist(), Bias.tolist(), Weight_posnegA.tolist(), Weight_TFA.tolist(), Bias_avg.tolist(), unique_words)
 
 
 read_file()
