@@ -120,10 +120,10 @@ def percept():
                 y = 1
             else:
                 y = -1
-            for w in doc.text:
-                if w not in stopwords:
-                    index = unique_words.index(w)
-                    x_vector[index] += 1
+            # for w in doc.text:
+            #     if w not in stopwords:
+            #         index = unique_words.index(w)
+            #         x_vector[index] += 1
 
             activation = np.sum(np.multiply(Weight_TFV, x_vector)) + Bias[1]
 
@@ -134,10 +134,10 @@ def percept():
                 cache_b[1] += (y * counter)
 
             counter += 1
-            x_vector = np.zeros(len(unique_words), dtype=int)
+            x_vector *= 0
 
-    Weight_posnegA -= (cache_posnegA/counter)
-    Weight_TFA -= (cache_TFA/counter)
+    Weight_posnegA = Weight_posnegV - (cache_posnegA/counter)
+    Weight_TFA = Weight_TFV - (cache_TFA/counter)
     Bias_avg = Bias - (Bias/counter)
 
     nbmodel_write(Weight_posnegV.tolist(), Weight_TFV.tolist(), Bias.tolist(), Weight_posnegA.tolist(), Weight_TFA.tolist(), Bias_avg.tolist(), unique_words)
