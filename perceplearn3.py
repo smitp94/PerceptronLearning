@@ -3,7 +3,8 @@ import sys
 import re
 import numpy as np
 
-file_write = 'data/nbmodel.txt'
+file_write_vanilla = 'data/vanillamodel.txt'
+file_write_average = 'data/averagedmodel.txt'
 
 records = []
 unique_words = []
@@ -55,12 +56,13 @@ def is_stopword(word):
         return False
 
 
-def nbmodel_write(words, len_unique):
-    global Prior_Totals
-    global Totals
-    f = open(file_write, 'w', encoding='utf8')
-    c = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Prior_Totals), json.dumps(Totals), json.dumps(words), json.dumps(len_unique)))
-    f.write(json.dumps(c))
+def nbmodel_write(Weight_posnegV, Weight_TFV, Bias, Weight_posnegA, Weight_TFA, Bias_avg, unique_words):
+    fv = open(file_write_vanilla, 'w', encoding='utf8')
+    fa = open(file_write_average, 'w', encoding='utf8')
+    cv = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegV), json.dumps(Weight_TFV), json.dumps(unique_words), json.dumps(Bias)))
+    ca = json.loads("[{0},{1},{2},{3}]".format(json.dumps(Weight_posnegA), json.dumps(Weight_TFA), json.dumps(unique_words), json.dumps(Bias_avg)))
+    fv.write(json.dumps(cv))
+    fa.write(json.dumps(ca))
 
 
 def percept():
@@ -77,34 +79,67 @@ def percept():
     # unique_words = [w for w in unique_words if w not in stopwords] # To remove stopwords
 
     # Initializing
-    Weight = np.zeros(len(unique_words), dtype=float)
+    # Vanilla
+    Weight_posnegV = np.zeros(len(unique_words), dtype=float)
+    Weight_TFV = np.zeros(len(unique_words), dtype=float)
+    Bias = np.zeros(2, dtype=float)
+
+    # Average
+    Weight_posnegA = np.zeros(len(unique_words), dtype=float)
+    Weight_TFA = np.zeros(len(unique_words), dtype=float)
+    Bias_avg = np.zeros(2, dtype=float)
+    cache_posnegA = np.zeros(len(unique_words), dtype=float)
+    cache_TFA = np.zeros(len(unique_words), dtype=float)
+    cache_b = np.zeros(2, dtype=float)
+
     x_vector = np.zeros(len(unique_words), dtype=int)
 
-    Bias = np.zeros(2,dtype=float)
+    for itr in range(30):
+        counter = 0
+        for doc in records:
+            if doc.pos_neg == "Pos":
+                y = 1
+            else:
+                y = -1
+            for w in doc.text:
+                if w not in stopwords:
+                    index = unique_words.index(w)
+                    x_vector[index] += 1
+            # print(x_vector)
 
-    # for itr in range(30):
-    for doc in records:
-        if doc.pos_neg == "Pos":
-            y = 1
-        else:
-            y = -1
-        for w in doc.text:
-            if w not in stopwords:
-                index = unique_words.index(w)
-                x_vector[index] = 1
-        # print(x_vector)
+            activation = np.sum(np.multiply(Weight_posnegV, x_vector)) + Bias[0]
 
-        activation = np.sum(np.multiply(Weight, x_vector)) + Bias[0]
+            if y*activation <= 0:
+                Weight_posnegV = Weight_posnegV + (y * x_vector)
+                cache_posnegA = cache_posnegA + (y * counter * x_vector)
+                Bias[0] += y
+                cache_b[0] += (y * counter)
 
-        if y*activation <= 0:
-            Weight = Weight + (y*x_vector)
-            Bias[0] += y
+            if doc.t_f == "True":
+                y = 1
+            else:
+                y = -1
+            for w in doc.text:
+                if w not in stopwords:
+                    index = unique_words.index(w)
+                    x_vector[index] += 1
 
-        x_vector = np.zeros(len(unique_words), dtype=int)
+            activation = np.sum(np.multiply(Weight_TFV, x_vector)) + Bias[1]
 
-    print((len(unique_words)))
-    for i in range(len(unique_words)-8000):
-        print(unique_words[i], Weight[i])
+            if y*activation <= 0:
+                Weight_TFV = Weight_TFV + (y*x_vector)
+                cache_TFA = cache_TFA + (y * counter * x_vector)
+                Bias[1] += y
+                cache_b[1] += (y * counter)
+
+            counter += 1
+            x_vector = np.zeros(len(unique_words), dtype=int)
+
+    Weight_posnegA -= (cache_posnegA/counter)
+    Weight_TFA -= (cache_TFA/counter)
+    Bias_avg -= (Bias/counter)
+
+    nbmodel_write(Weight_posnegV, Weight_TFV, Bias, Weight_posnegA, Weight_TFA, Bias_avg, unique_words)
 
 
 read_file()
