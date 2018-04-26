@@ -104,8 +104,9 @@ def percept():
             else:
                 y = -1
             for w in doc.text:
-                index = unique_words.index(w)
-                x_vector[index] += 1
+                if w in unique_words:
+                    index = unique_words.index(w)
+                    x_vector[index] += 1
             # print(x_vector)
 
             activation = np.sum(np.multiply(Weight_posnegV, x_vector)) + Bias[0]
