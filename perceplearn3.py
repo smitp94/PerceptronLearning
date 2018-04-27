@@ -26,6 +26,11 @@ def remove_punctuation_lower(contents):
     text = ' '.join(contents)
     regex = re.compile('[%s]' % re.escape("!\"#$%&()*+,-./:;<=>?@[\]^_{|}~"))
     text = regex.sub(' ', text)
+
+    # for numbers
+    regex = re.compile(r'\d+')
+    text = regex.sub('*no*', text)
+
     text = text.lower()
     return text.split()
 
@@ -53,7 +58,7 @@ def read_file():
         text = remove_punctuation_lower(contents[3::])
         # For getting all unique words
         for w in text:
-            if w not in unique_words and w not in stopwords:
+            if w not in unique_words and w not in stopwords and not w.isdigit():
                 unique_words.append(w)
 
         r = Record(id, t_f, pos_neg, text)

@@ -37,6 +37,11 @@ def remove_punctuation_lower(contents):
     text = ' '.join(contents)
     regex = re.compile('[%s]' % re.escape("!\"#$%&()*+,-./:;<=>?@[\]^_{|}~"))
     text = regex.sub(' ', text)
+
+    # for numbers
+    regex = re.compile(r'\d+')
+    text = regex.sub('*no*', text)
+
     text = text.lower()
     return text.split()
 
