@@ -39,7 +39,8 @@ def read_file():
     global stopwords
     global x_vec
 
-    with open("data/train-labeled.txt", encoding='utf8') as f:
+    # train-labeled
+    with open("data/test.txt", encoding='utf8') as f:
     # with open(sys.argv[1], encoding='utf8') as f:
         content = f.readlines()
     content = [x.strip() for x in content]
@@ -70,6 +71,10 @@ def read_file():
                 index = unique_words.index(w)
                 x_vector[index] += 1
         x_vec[r.id] = x_vector
+
+    # for x in x_vec:
+        # print(list(zip(unique_words,x_vec[x]))[:])
+    # print(x_vector)
 
 
 def is_stopword(word):
@@ -123,7 +128,8 @@ def percept():
         random.shuffle(records)
         for doc in records:
             x_vector = x_vec[doc.id]
-            # # X Vector
+
+            # X Vector
             # for w in doc.text:
             #     if w in unique_words:
             #         index = unique_words.index(w)
@@ -131,34 +137,34 @@ def percept():
 
             # Pos Neg Learning
             if doc.pos_neg == "Pos":
-                y = 1
+                y1 = 1
             else:
-                y = -1
+                y1 = -1
 
-            activation = np.sum(np.multiply(Weight_posnegV, x_vector)) + Bias[0]
+            activation1 = np.sum(np.multiply(Weight_posnegV, x_vector)) + Bias[0]
 
-            if y*activation <= 0:
-                Weight_posnegV = Weight_posnegV + (y * x_vector)
-                cache_posnegA = cache_posnegA + (y * counter * x_vector)
-                Bias[0] += y
-                cache_b[0] += (y * counter)
+            if y1*activation1 <= 0:
+                Weight_posnegV = Weight_posnegV + (y1 * x_vector)
+                cache_posnegA = cache_posnegA + (y1 * counter * x_vector)
+                Bias[0] += y1
+                cache_b[0] += (y1 * counter)
 
             # True Fake Learning
             if doc.t_f == "True":
-                y = 1
+                y2 = 1
             else:
-                y = -1
+                y2 = -1
 
-            activation = np.sum(np.multiply(Weight_TFV, x_vector)) + Bias[1]
+            activation2 = np.sum(np.multiply(Weight_TFV, x_vector)) + Bias[1]
 
-            if y*activation <= 0:
-                Weight_TFV = Weight_TFV + (y * x_vector)
-                cache_TFA = cache_TFA + (y * counter * x_vector)
-                Bias[1] += y
-                cache_b[1] += (y * counter)
+            if y2*activation2 <= 0:
+                Weight_TFV = Weight_TFV + (y2 * x_vector)
+                cache_TFA = cache_TFA + (y2 * counter * x_vector)
+                Bias[1] += y2
+                cache_b[1] += (y2 * counter)
 
             counter += 1
-            # x_vector *= 0
+
 
     Weight_posnegA = Weight_posnegV - (cache_posnegA/counter)
     Weight_TFA = Weight_TFV - (cache_TFA/counter)
